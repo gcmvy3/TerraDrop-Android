@@ -1,13 +1,18 @@
 package terradrop.terradrop;
 
-import android.content.IntentSender;
+import android.Manifest;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
+import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.view.menu.MenuView;
 import android.util.Log;
@@ -15,36 +20,41 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.android.gms.common.api.ResolvableApiException;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationSettingsRequest;
-import com.google.android.gms.location.LocationSettingsResponse;
-import com.google.android.gms.location.SettingsClient;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.Task;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.Volley;
 
-public class MainActivity extends AppCompatActivity implements FoundDropsFragment.OnFragmentInteractionListener,
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+
+public class MainActivity extends AppCompatActivity implements LocationListener,
+                                                                FoundDropsFragment.OnFragmentInteractionListener,
                                                                 CompassFragment.OnFragmentInteractionListener,
                                                                 ProfileFragment.OnFragmentInteractionListener
 {
     protected static final int REQUEST_CHECK_SETTINGS = 0x1;
-    
-    private FusedLocationProviderClient mFusedLocationClient;
-    private LocationRequest mLocationRequest;
-    private LocationCallback mLocationCallback;
 
-    private boolean mRequestingLocationUpdates = false;
+    private LocationManager locationManager;
 
+    private Location currentLocation;
     private double currentLatitude = 0;
     private double currentLongitude = 0;
 
     private Fragment currentFragment;
+
+    private RequestQueue requestQueue;
+
+    private String serverIP = "http://192.168.1.125:8080";
+    private String getDropsRequest = serverIP + "/getDrops";
+
+    ArrayList<Drop> closestDrops;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -63,124 +73,40 @@ public class MainActivity extends AppCompatActivity implements FoundDropsFragmen
         //Open the compass fragment by default
         navigation.setSelectedItemId(R.id.navigation_compass);
 
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-
-        //Start tracking location
-        mLocationCallback = new LocationCallback()
+        if (ActivityCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
         {
-            @Override
-            public void onLocationResult(LocationResult locationResult)
-            {
-                for (Location location : locationResult.getLocations())
-                {
-                    currentLatitude = location.getLatitude();
-                    currentLongitude = location.getLongitude();
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+            return;
+        }
 
-                    if(currentFragment instanceof CompassFragment)
-                    {
-                        TextView longitudeView = (TextView) currentFragment.getView().findViewById(R.id.longitudeValue);
-                        longitudeView.setText("" + currentLongitude);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-                        TextView latitudeView = (TextView) currentFragment.getView().findViewById(R.id.latitudeValue);
-                        latitudeView.setText("" + currentLatitude);
-                    }
-                }
-            };
-        };
+        try
+        {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                    1000,
+                    0, this);
+        }
+        catch(SecurityException e)
+        {
+            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+            startActivity(intent);
+        }
 
-        Log.d("[DEBUG]", "So far so good!");
-
-        createLocationRequest();
+        closestDrops = new ArrayList<Drop>();
+        requestQueue = Volley.newRequestQueue(this);
     }
 
-    protected void createLocationRequest()
+    @Override
+    protected void onPause()
     {
-        mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(10000);
-        mLocationRequest.setFastestInterval(5000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-
-        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder()
-                .addLocationRequest(mLocationRequest);
-
-        SettingsClient client = LocationServices.getSettingsClient(this);
-        Task<LocationSettingsResponse> task;
-        task = client.checkLocationSettings(builder.build());
-
-        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>()
-        {
-            @Override
-            public void onSuccess(LocationSettingsResponse locationSettingsResponse)
-            {
-                mRequestingLocationUpdates = true;
-                startLocationUpdates();
-                Log.d("[DEBUG]", "Successfully started location services");
-            }
-        });
-
-        task.addOnFailureListener(this, new OnFailureListener()
-        {
-            @Override
-            public void onFailure(@NonNull Exception e)
-            {
-                Log.d("[DEBUG]", "Failed to start location services");
-
-                if (e instanceof ResolvableApiException)
-                {
-                    // Location settings are not satisfied, but this can be fixed
-                    // by showing the user a dialog.
-                    try
-                    {
-                        // Show the dialog by calling startResolutionForResult(),
-                        // and check the result in onActivityResult().
-                        ResolvableApiException resolvable = (ResolvableApiException) e;
-                        resolvable.startResolutionForResult(MainActivity.this,
-                                REQUEST_CHECK_SETTINGS);
-                    }
-                    catch (IntentSender.SendIntentException sendEx)
-                    {
-                        // Ignore the error.
-                    }
-                }
-            }
-        });
+        super.onPause();
     }
 
     @Override
     protected void onResume()
     {
         super.onResume();
-        if (mRequestingLocationUpdates)
-        {
-            startLocationUpdates();
-        }
-    }
-
-    private void startLocationUpdates()
-    {
-        try
-        {
-            mFusedLocationClient.requestLocationUpdates(mLocationRequest,
-                    mLocationCallback,
-                    null /* Looper */);
-
-            Log.d("[DEBUG]", "Started tracking location!");
-        }
-        catch (SecurityException e)
-        {
-            //If we don't have permission to track location, display a warning
-            showLocationError();
-        }
-    }
-
-    private void showLocationError()
-    {
-        AlertDialog.Builder builder1 = new AlertDialog.Builder(this.getApplicationContext());
-        builder1.setMessage(R.string.location_error_text);
-        builder1.setTitle(getString(R.string.location_error_title));
-
-        AlertDialog locationAlert = builder1.create();
-        locationAlert.show();
     }
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
@@ -230,12 +156,123 @@ public class MainActivity extends AppCompatActivity implements FoundDropsFragmen
         }
     }
 
+    private void requestDrops()
+    {
+        JsonArrayRequest arrayRequest = new JsonArrayRequest(getDropsRequest, new Response.Listener<JSONArray>()
+        {
+            @Override
+            public void onResponse(JSONArray response)
+            {
+                closestDrops = new ArrayList<Drop>();
+
+                try
+                {
+                    //Read in drops sent from the server
+                    //Add them to an arraylist
+
+                    for (int i = 0; i < response.length(); i++)
+                    {
+                        JSONObject jo = response.getJSONObject(i);
+
+                        Log.d("[SERVER RESPONSE]", jo.toString());
+
+                        int dropID = jo.getInt("id");
+                        double latitude = jo.getDouble("latitude");
+                        double longitude = jo.getDouble("longitude");
+
+                        Drop newDrop = new Drop(dropID, latitude, longitude);
+                        closestDrops.add(newDrop);
+                    }
+
+                    updateCompass();
+                }
+                catch (JSONException e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }, new Response.ErrorListener()
+        {
+            @Override
+            public void onErrorResponse(VolleyError error)
+            {
+                if(error != null)
+                {
+                    Log.e("[SERVER ERROR]", "" + error.getMessage());
+                }
+            }
+        });
+        RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+        requestQueue.add(arrayRequest);
+        Log.d("[SERVER]", "Querying " + getDropsRequest);
+    }
+
+    private void updateCompass()
+    {
+        if(currentFragment != null && currentFragment instanceof CompassFragment)
+        {
+            CompassFragment compassFrag = (CompassFragment) currentFragment;
+            compassFrag.updateDrops(closestDrops, currentLocation);
+        }
+    }
+
     @Override
     public void onFragmentInteraction(String title)
     {
         if(getSupportActionBar() != null)
         {
             getSupportActionBar().setTitle(title);
+        }
+    }
+
+    @Override
+    public void onLocationChanged(Location location)
+    {
+        setCurrentLocation(location);
+
+        updateCompass();
+
+        requestDrops();
+
+        if(currentFragment != null && currentFragment instanceof CompassFragment)
+        {
+            TextView longitudeView = (TextView) currentFragment.getView().findViewById(R.id.longitudeValue);
+            longitudeView.setText("" + currentLongitude);
+
+            TextView latitudeView = (TextView) currentFragment.getView().findViewById(R.id.latitudeValue);
+            latitudeView.setText("" + currentLatitude);
+        }
+    }
+
+    @Override
+    public void onStatusChanged(String s, int i, Bundle bundle)
+    {
+
+    }
+
+    @Override
+    public void onProviderEnabled(String s)
+    {
+        Toast.makeText(getBaseContext(), "Gps is turned on!! ",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onProviderDisabled(String s)
+    {
+        Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+        startActivity(intent);
+        Toast.makeText(getBaseContext(), "Gps is turned off!! ",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    private void setCurrentLocation(Location l)
+    {
+        if(l != null)
+        {
+            currentLocation = l;
+            currentLatitude = l.getLatitude();
+            currentLongitude = l.getLongitude();
         }
     }
 }
