@@ -39,8 +39,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                                                                 CompassFragment.OnFragmentInteractionListener,
                                                                 ProfileFragment.OnFragmentInteractionListener
 {
-    protected static final int REQUEST_CHECK_SETTINGS = 0x1;
-
     private LocationManager locationManager;
 
     private Location currentLocation;
@@ -212,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         if(currentFragment != null && currentFragment instanceof CompassFragment)
         {
             CompassFragment compassFrag = (CompassFragment) currentFragment;
-            compassFrag.updateDrops(closestDrops, currentLocation);
+            compassFrag.updateDrops(closestDrops.size());
         }
     }
 
@@ -274,5 +272,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             currentLatitude = l.getLatitude();
             currentLongitude = l.getLongitude();
         }
+        else
+        {
+            Log.e("[ERROR]", "Trying to set null location!");
+        }
+    }
+
+    public ArrayList<Drop> getClosestDrops()
+    {
+        return closestDrops;
+    }
+
+    public Location getCurrentLocation()
+    {
+        return currentLocation;
     }
 }

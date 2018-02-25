@@ -3,4 +3,7 @@
     <string name="title_compass">Compass</string>
     <string name="title_profile">Profile</string>
     <string name="title_foundDrops">Found Drops</string>
+
+    <string name="location_error_title">Location Error!</string>
+    <string name="location_error_text">Could not read location. Make sure the app has location permissions turned on.</string>
 </resources>
