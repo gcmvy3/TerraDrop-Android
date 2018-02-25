@@ -22,10 +22,12 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
@@ -33,6 +35,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements LocationListener,
                                                                 FoundDropsFragment.OnFragmentInteractionListener,
@@ -45,12 +49,21 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private double currentLatitude = 0;
     private double currentLongitude = 0;
 
+    //Global variables used for creating drop
+    private int userId = 1;
+    private String messageTitle;
+    private String messageContent;
+    private Location dropLocation;
+
     private Fragment currentFragment;
 
     private RequestQueue requestQueue;
 
-    private String serverIP = "http://192.168.1.125:8080";
+    private String serverIP = "http://76.183.125.29:8080";
+    //private String serverIP = "http://192.168.1.125:8080";
+
     private String getDropsRequest = serverIP + "/getDrops";
+    private String postDropRequest = serverIP + "/postDrop";
 
     ArrayList<Drop> closestDrops;
 
@@ -205,6 +218,55 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         Log.d("[SERVER]", "Querying " + getDropsRequest);
     }
 
+    public void postDrop(int userId, String title, String message, Location location)
+    {
+        this.userId = userId;
+        this.messageTitle = title;
+        this.messageContent = message;
+        this.dropLocation = location;
+
+        StringRequest postRequest = new StringRequest(Request.Method.POST, postDropRequest,
+                new Response.Listener<String>()
+                {
+                    @Override
+                    public void onResponse(String response)
+                    {
+                        //Handle response
+                        //String "TRUE" means success
+                        //String "FALSE" means failure
+
+                        Log.d("[SERVER RESPONSE]", response);
+                    }
+                },
+                new Response.ErrorListener()
+                {
+                    @Override
+                    public void onErrorResponse(VolleyError error)
+                    {
+                        if(error!= null && error.getMessage() != null)
+                        {
+                            Log.e("[SERVER ERROR]", error.getMessage());
+                        }
+                    }
+                }
+        )
+        {
+            @Override
+            protected Map<String, String> getParams()
+            {
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("userID", "" + MainActivity.this.userId);
+                params.put("title", MainActivity.this.messageTitle);
+                params.put("message", MainActivity.this.messageContent);
+                params.put("latitude", "" + MainActivity.this.dropLocation.getLatitude());
+                params.put("longitude", "" + MainActivity.this.dropLocation.getLongitude());
+
+                return params;
+            }
+        };
+        requestQueue.add(postRequest);
+    }
+
     private void updateCompass()
     {
         if(currentFragment != null && currentFragment instanceof CompassFragment)
@@ -232,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         requestDrops();
 
-        if(currentFragment != null && currentFragment instanceof CompassFragment)
+        if(currentFragment != null && currentFragment.getView() != null && currentFragment instanceof CompassFragment)
         {
             TextView longitudeView = (TextView) currentFragment.getView().findViewById(R.id.longitudeValue);
             longitudeView.setText("" + currentLongitude);

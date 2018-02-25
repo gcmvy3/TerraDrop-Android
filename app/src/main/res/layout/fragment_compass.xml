@@ -12,8 +12,9 @@
         <terradrop.terradrop.CompassView
             android:id="@+id/compassView"
             android:layout_width="match_parent"
-            android:layout_height="358dp"
-            android:layout_centerHorizontal="true"
+            android:layout_height="320dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
             android:contentDescription="Picture of a compass"
             tools:layout_editor_absoluteX="2dp"
             tools:layout_editor_absoluteY="40dp"/>
@@ -22,9 +23,9 @@
             android:id="@+id/dropsNearby"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/compassView"
+            android:layout_alignBottom="@+id/compassView"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="19dp"
+            android:layout_marginBottom="25dp"
             android:text="There are no drops nearby"
             android:textAppearance="@style/TextAppearance.AppCompat.Large"/>
 
@@ -34,8 +35,8 @@
             android:layout_height="wrap_content"
             android:layout_alignLeft="@+id/dropsNearby"
             android:layout_alignStart="@+id/dropsNearby"
-            android:layout_below="@+id/dropsNearby"
-            android:layout_marginTop="15dp"
+            android:layout_below="@+id/dropButton"
+            android:layout_marginTop="12dp"
             android:text="Lattitude:"/>
 
         <TextView
@@ -45,7 +46,7 @@
             android:layout_alignEnd="@+id/latitudeLabel"
             android:layout_alignRight="@+id/latitudeLabel"
             android:layout_below="@+id/latitudeLabel"
-            android:layout_marginTop="11dp"
+            android:layout_marginTop="13dp"
             android:text="Longitude:"/>
 
         <TextView
@@ -54,9 +55,9 @@
             android:layout_height="wrap_content"
 
             android:layout_above="@+id/longitudeLabel"
-            android:layout_alignEnd="@+id/dropsNearby"
+            android:layout_alignEnd="@+id/dropButton"
             android:layout_alignLeft="@+id/longitudeValue"
-            android:layout_alignRight="@+id/dropsNearby"
+            android:layout_alignRight="@+id/dropButton"
             android:layout_alignStart="@+id/longitudeValue"
             android:text="Unavailable"/>
 
@@ -66,6 +67,8 @@
             android:layout_height="wrap_content"
             android:layout_alignBaseline="@+id/longitudeLabel"
             android:layout_alignBottom="@+id/longitudeLabel"
+            android:layout_alignEnd="@+id/dropButton"
+            android:layout_alignRight="@+id/dropButton"
             android:layout_marginLeft="13dp"
             android:layout_marginStart="13dp"
             android:layout_toEndOf="@+id/longitudeLabel"
@@ -76,22 +79,35 @@
             android:id="@+id/compassLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignEnd="@+id/latitudeLabel"
-            android:layout_alignRight="@+id/latitudeLabel"
             android:layout_below="@+id/longitudeLabel"
-            android:layout_marginTop="11dp"
+            android:layout_marginTop="14dp"
+            android:layout_toLeftOf="@+id/longitudeValue"
+            android:layout_toStartOf="@+id/longitudeValue"
             android:text="Compass:"/>
 
         <TextView
             android:id="@+id/compassValue"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignEnd="@+id/latitudeValue"
+            android:layout_alignBaseline="@+id/compassLabel"
+            android:layout_alignBottom="@+id/compassLabel"
+            android:layout_alignEnd="@+id/longitudeValue"
             android:layout_alignLeft="@+id/longitudeValue"
-            android:layout_alignRight="@+id/latitudeValue"
+            android:layout_alignRight="@+id/longitudeValue"
             android:layout_alignStart="@+id/longitudeValue"
-            android:layout_alignTop="@+id/compassLabel"
             android:text="Unavailable"/>
+
+        <Button
+            android:id="@+id/dropButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignEnd="@+id/dropsNearby"
+            android:layout_alignLeft="@+id/latitudeLabel"
+            android:layout_alignRight="@+id/dropsNearby"
+            android:layout_alignStart="@+id/latitudeLabel"
+            android:layout_below="@+id/compassView"
+            android:background="@color/colorPrimary"
+            android:text="Drop"/>
 
     </RelativeLayout>
 

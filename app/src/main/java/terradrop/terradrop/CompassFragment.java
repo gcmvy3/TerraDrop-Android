@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -37,6 +38,8 @@ public class CompassFragment extends Fragment implements SensorEventListener
     private TextView compassValueView;
     private TextView dropsNearbyView;
     private CompassView compassView;
+
+    private Button placeDropButton;
 
     private Location currentLocation;
     private ArrayList<Drop> nearbyDrops;
@@ -92,6 +95,15 @@ public class CompassFragment extends Fragment implements SensorEventListener
         compassView = (CompassView) view.findViewById(R.id.compassView);
         compassValueView = (TextView) view.findViewById(R.id.compassValue);
         dropsNearbyView = (TextView) view.findViewById(R.id.dropsNearby);
+        placeDropButton = (Button) view.findViewById(R.id.dropButton);
+        placeDropButton.setOnClickListener( new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+
+            }
+        });
 
         // Inflate the layout for this fragment
         return view;

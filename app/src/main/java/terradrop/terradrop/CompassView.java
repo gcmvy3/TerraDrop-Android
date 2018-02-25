@@ -21,6 +21,7 @@ import java.util.ArrayList;
 public class CompassView extends View
 {
     private final int CIRCLE_THICKNESS = 8;
+    private final double COMPASS_LINE_LENGTH = 0.65;
 
     private float centerX;
     private float centerY;
@@ -63,18 +64,23 @@ public class CompassView extends View
         super.onDraw(canvas);
 
         centerX = getX() + getWidth()  / 2;
-        centerY = getY() + getHeight() / 2;
-        radius = Math.min(getWidth(), getHeight()) / 2 - (CIRCLE_THICKNESS * 2);
+        centerY = (int)(getY() + getHeight() / 2.5);
+        radius = Math.min(getWidth(), getHeight()) / 4;
 
         paint.setColor(Color.BLACK);
         canvas.drawCircle(centerX, centerY, radius, paint);
 
+        double markerLineLength = radius * (1 - COMPASS_LINE_LENGTH);
+
+        //Draw a line pointing north
         paint.setColor(Color.RED);
+        drawCompassLine(compassAngle, markerLineLength, canvas, paint);
 
-        double northX = Math.cos(compassAngle) * radius;
-        double northY = Math.sin(compassAngle) * radius;
-
-        canvas.drawLine(centerX, centerY, centerX + (float)northX, centerY + (float)northY, paint);
+        //Draw lines in the cardinal directions
+        paint.setColor(Color.BLACK);
+        drawCompassLine(compassAngle + (Math.PI / 2), markerLineLength, canvas, paint);
+        drawCompassLine(compassAngle + Math.PI, markerLineLength, canvas, paint);
+        drawCompassLine(compassAngle - (Math.PI / 2), markerLineLength, canvas, paint);
 
         paint.setColor(Color.GREEN);
 
@@ -89,9 +95,9 @@ public class CompassView extends View
             currentLocation = mainActivity.getCurrentLocation();
         }
 
+        //Draw a line pointing to each nearby drop
         if(closestDrops != null && currentLocation != null)
         {
-            Log.d("[DEBUG]", "Started drawing lines!");
             for(Drop d : closestDrops)
             {
                 //Calculate angle to drop and draw a line on the compass
@@ -101,21 +107,33 @@ public class CompassView extends View
                                                 d.getLongitude());
                 angleToDrop += compassAngle;
 
-                double dropX = Math.cos(angleToDrop) * radius;
-                double dropY = Math.sin(angleToDrop) * radius;
+                double distanceToDrop = currentLocation.distanceTo(d.getLocation());
 
-                canvas.drawLine(centerX, centerY, centerX + (float)dropX, centerY + (float)dropY, paint);
-                Log.d("[DEBUG]", "Drawing drop line!");
+                double dropLineRadius = radius * ((distanceToDrop) / 150);
+
+                drawCompassLine(angleToDrop, dropLineRadius, canvas, paint);
             }
         }
-        if(closestDrops == null)
+    }
+
+    private void drawCompassLine(double angle, double length, Canvas c, Paint p)
+    {
+        float endX = (float)Math.cos(angle) * radius;
+        float endY = (float)Math.sin(angle) * radius;
+
+        float startX = (float)(Math.cos(angle) * (radius - length));
+        float startY = (float)(Math.sin(angle) * (radius - length));
+
+        if(Math.abs(startX) > Math.abs(endX))
         {
-            //Log.d("[DEBUG]", "Null drops!");
+            startX = endX;
         }
-        if(currentLocation == null)
+        if(Math.abs(startY) > Math.abs(endY))
         {
-            //Log.d("[DEBUG]", "Null location!");
+            startY = endY;
         }
+
+        c.drawLine(centerX + startX, centerY + startY, centerX + endX, centerY + endY, paint);
     }
 
     @Override
