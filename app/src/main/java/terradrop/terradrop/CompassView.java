@@ -82,8 +82,6 @@ public class CompassView extends View
         drawCompassLine(compassAngle + Math.PI, markerLineLength, canvas, paint);
         drawCompassLine(compassAngle - (Math.PI / 2), markerLineLength, canvas, paint);
 
-        paint.setColor(Color.GREEN);
-
         MainActivity mainActivity = (MainActivity) getContext();
 
         ArrayList<Drop> closestDrops = null;
@@ -100,6 +98,8 @@ public class CompassView extends View
         {
             for(Drop d : closestDrops)
             {
+                paint.setColor(d.getColor());
+
                 //Calculate angle to drop and draw a line on the compass
                 double angleToDrop = getBearing(currentLocation.getLatitude(),
                                                 currentLocation.getLongitude(),

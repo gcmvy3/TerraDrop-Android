@@ -8,6 +8,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -101,11 +102,33 @@ public class CompassFragment extends Fragment implements SensorEventListener
             @Override
             public void onClick(View v)
             {
-
+                if(currentLocation == null)
+                {
+                    //Display error dialog there is no location data
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+                    alertDialogBuilder
+                            .setTitle("No location!")
+                            .setMessage("Could not find phone location. Please wait for GPS to initialize.")
+                            .setCancelable(true);
+                    //Create and show alert dialog
+                    AlertDialog alertDialog = alertDialogBuilder.create();
+                    alertDialog.show();
+                }
+                else
+                {
+                    //Display error dialog if we cannot create a drop
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(getActivity());
+                    alertDialogBuilder
+                            .setTitle("GPS error!")
+                            .setMessage("Location not accurate enough to place drop")
+                            .setCancelable(true);
+                    //Create and show alert dialog
+                    AlertDialog alertDialog = alertDialogBuilder.create();
+                    alertDialog.show();
+                }
             }
         });
 
-        // Inflate the layout for this fragment
         return view;
     }
 

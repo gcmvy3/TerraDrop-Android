@@ -1,5 +1,6 @@
 package terradrop.terradrop;
 
+import android.graphics.Color;
 import android.location.Location;
 
 /**
@@ -10,12 +11,14 @@ public class Drop
 {
     private int id;
     private Location location;
+    int color;
 
-    public Drop(int id, double latitude, double longitude)
+    public Drop(int id, double latitude, double longitude, String col)
     {
         location = new Location("");
-        location.setLatitude(latitude);//your coords of course
+        location.setLatitude(latitude);
         location.setLongitude(longitude);
+        this.color = Color.parseColor(col);
     }
 
     public Location getLocation()
@@ -31,6 +34,11 @@ public class Drop
     public double getLongitude()
     {
         return location.getLongitude();
+    }
+
+    public int getColor()
+    {
+        return color;
     }
 
     public int getId()

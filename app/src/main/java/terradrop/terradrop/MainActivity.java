@@ -190,8 +190,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                         int dropID = jo.getInt("id");
                         double latitude = jo.getDouble("latitude");
                         double longitude = jo.getDouble("longitude");
+                        String color = jo.getString("color");
 
-                        Drop newDrop = new Drop(dropID, latitude, longitude);
+                        Drop newDrop = new Drop(dropID, latitude, longitude, color);
                         closestDrops.add(newDrop);
                     }
 
